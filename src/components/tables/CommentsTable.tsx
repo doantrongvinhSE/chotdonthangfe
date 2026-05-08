@@ -64,12 +64,9 @@ const CommentsTable: React.FC<CommentsTableProps> = ({
     }
   };
 
-  // Lấy số điện thoại đầu tiên nếu có nhiều số
-  const getFirstPhone = (phone: string | null): string | null => {
-    if (!phone) return null;
-    // Tách số điện thoại bằng dấu phẩy hoặc khoảng trắng
-    const phones = phone.split(/[,，\s]+/).map(p => p.trim()).filter(p => p);
-    return phones.length > 0 ? phones[0] : null;
+  const getPhoneList = (phone: string | null): string[] => {
+    if (!phone) return [];
+    return phone.split(/[,，\s]+/).map((item) => item.trim()).filter(Boolean);
   };
 
   const syncPhone = async (phone: string, commentId: string) => {
@@ -88,9 +85,8 @@ const CommentsTable: React.FC<CommentsTableProps> = ({
 
     await onStatusChange(commentId, 'isCalling');
 
-    // Lấy số điện thoại đầu tiên
-    const firstPhone = getFirstPhone(phone);
-    if (!firstPhone) {
+    const selectedPhone = phone.trim();
+    if (!selectedPhone) {
       if (onShowToast) {
         onShowToast('Không tìm thấy số điện thoại', 'warning');
       }
@@ -98,12 +94,12 @@ const CommentsTable: React.FC<CommentsTableProps> = ({
       return;
     }
 
-    setSyncingPhone(firstPhone);
+    setSyncingPhone(selectedPhone);
     try {
       const myHeaders = new Headers();
       myHeaders.append("Content-Type", "application/json");
 
-      const raw = JSON.stringify(firstPhone);
+      const raw = JSON.stringify(selectedPhone);
 
       const requestOptions = {
         method: "PUT",
@@ -117,7 +113,7 @@ const CommentsTable: React.FC<CommentsTableProps> = ({
 
       if (response.ok) {
         if (onShowToast) {
-          onShowToast(`Đã đồng bộ số điện thoại: ${firstPhone} cho ${callerName}`, 'success');
+          onShowToast(`Đã đồng bộ số điện thoại: ${selectedPhone} cho ${callerName}`, 'success');
         }
       } else {
         throw new Error('Sync failed');
@@ -256,7 +252,8 @@ const CommentsTable: React.FC<CommentsTableProps> = ({
             <tbody className="divide-y divide-slate-200">
               {comments.map((comment) => {
                 const time = formatTimestamp(comment.timestamp);
-                const hasPhone = Boolean(comment.phone);
+                const phoneList = getPhoneList(comment.phone);
+                const hasPhone = phoneList.length > 0;
                 const isHighlighted = highlightedIds?.has(comment.id);
 
                 return (
@@ -325,26 +322,30 @@ const CommentsTable: React.FC<CommentsTableProps> = ({
 
                     <td className={`${tdPad} align-middle`}>
                       {hasPhone ? (
-                        <div className="inline-flex items-center gap-2">
-                          <button
-                            onClick={() => copyPhone(comment.phone!)}
-                            className="text-sm font-bold text-[#2563ee] hover:text-[#1d4ed8] hover:underline hover:underline-offset-2 transition-colors"
-                            title="Click để copy số điện thoại"
-                          >
-                            {comment.phone}
-                          </button>
-                          <button
-                            onClick={() => syncPhone(comment.phone!, comment.id)}
-                            disabled={syncingPhone === getFirstPhone(comment.phone)}
-                            className="p-1 hover:bg-slate-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="Đồng bộ số điện thoại"
-                          >
-                            {syncingPhone === getFirstPhone(comment.phone) ? (
-                              <RefreshCw className="w-4 h-4 text-blue-500 animate-spin" />
-                            ) : (
-                              <RefreshCw className="w-4 h-4 text-slate-400 hover:text-blue-500" />
-                            )}
-                          </button>
+                        <div className="space-y-2">
+                          {phoneList.map((phone) => (
+                            <div key={`${comment.id}-${phone}`} className="inline-flex items-center gap-2">
+                              <button
+                                onClick={() => copyPhone(phone)}
+                                className="text-sm font-bold text-[#2563ee] hover:text-[#1d4ed8] hover:underline hover:underline-offset-2 transition-colors"
+                                title="Click để copy số điện thoại"
+                              >
+                                {phone}
+                              </button>
+                              <button
+                                onClick={() => syncPhone(phone, comment.id)}
+                                disabled={syncingPhone === phone}
+                                className="p-1 hover:bg-slate-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Đồng bộ số điện thoại"
+                              >
+                                {syncingPhone === phone ? (
+                                  <RefreshCw className="w-4 h-4 text-blue-500 animate-spin" />
+                                ) : (
+                                  <RefreshCw className="w-4 h-4 text-slate-400 hover:text-blue-500" />
+                                )}
+                              </button>
+                            </div>
+                          ))}
                         </div>
                       ) : (
                         <span className="italic text-sm text-slate-400">Không có</span>
