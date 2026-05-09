@@ -20,8 +20,6 @@ export function usePosts(showToastMessage?: (message: string, type?: ToastType) 
   const [isRealtimeEnabled, setIsRealtimeEnabled] = useState(true); // Auto enable
   const [lastPollTime, setLastPollTime] = useState<Date | null>(null);
   const [isPolling, setIsPolling] = useState(false);
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const POLLING_INTERVAL = 7000; // 7 giây
 
   const fetchPosts = async (isPolling = false) => {
     try {
@@ -38,7 +36,7 @@ export function usePosts(showToastMessage?: (message: string, type?: ToastType) 
 
       const mappedPosts: RunningPost[] = apiPosts.map(mapApiPostToRunningPost);
       // Sort by updatedAt descending (newest first)
-         mappedPosts.sort((a, b) => {
+      mappedPosts.sort((a, b) => {
         if (!a.id && !b.id) return 0;
         if (!a.id) return 1;
         if (!b.id) return -1;
@@ -71,47 +69,11 @@ export function usePosts(showToastMessage?: (message: string, type?: ToastType) 
     }
   };
 
-  // Start polling
-  const startPolling = useCallback(() => {
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
-    }
 
-    pollingIntervalRef.current = setInterval(() => {
-      fetchPosts(true);
-    }, POLLING_INTERVAL);
-  }, []);
-
-  // Stop polling
-  const stopPolling = useCallback(() => {
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
-      pollingIntervalRef.current = null;
-    }
-  }, []);
-
-  // Toggle realtime polling
-  const toggleRealtime = () => {
-    if (isRealtimeEnabled) {
-      stopPolling();
-      setIsRealtimeEnabled(false);
-    } else {
-      startPolling();
-      setIsRealtimeEnabled(true);
-    }
-  };
 
   useEffect(() => {
     fetchPosts();
-
-    // Auto start polling
-    startPolling();
-
-    // Cleanup polling on unmount
-    return () => {
-      stopPolling();
-    };
-  }, [startPolling, stopPolling]);
+  }, []);
 
   const addPost = async (newPost: Omit<RunningPost, 'id'>) => {
     try {
@@ -381,6 +343,5 @@ export function usePosts(showToastMessage?: (message: string, type?: ToastType) 
     isRealtimeEnabled,
     isPolling,
     lastPollTime,
-    toggleRealtime,
   };
 }
