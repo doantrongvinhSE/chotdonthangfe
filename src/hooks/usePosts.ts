@@ -14,7 +14,7 @@ export function usePosts(showToastMessage?: (message: string, type?: ToastType) 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const itemsPerPage = 10;
+  const itemsPerPage = 100;
 
   // Realtime polling states
   const [isRealtimeEnabled, setIsRealtimeEnabled] = useState(true); // Auto enable
@@ -38,11 +38,11 @@ export function usePosts(showToastMessage?: (message: string, type?: ToastType) 
 
       const mappedPosts: RunningPost[] = apiPosts.map(mapApiPostToRunningPost);
       // Sort by updatedAt descending (newest first)
-      mappedPosts.sort((a, b) => {
-        if (!a.lastCommentAt && !b.lastCommentAt) return 0;
-        if (!a.lastCommentAt) return 1;
-        if (!b.lastCommentAt) return -1;
-        return b.lastCommentAt.getTime() - a.lastCommentAt.getTime();
+         mappedPosts.sort((a, b) => {
+        if (!a.id && !b.id) return 0;
+        if (!a.id) return 1;
+        if (!b.id) return -1;
+        return b.id - a.id;
       });
 
       setItems(mappedPosts);
